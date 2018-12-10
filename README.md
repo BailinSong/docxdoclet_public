@@ -1,30 +1,40 @@
 # DocxDoclet
 Doclet which creates Javadoc as Microsoft Word document.
+Ein Doclet das Javadoc als MS-Word Dokument generiert. z.B. für automatische Generierung von Schnittstellenbeschreibungen und APIs ;-) 
 
-## Homepage
+## Source / Quelle
 
-[http://www.csync.net/blog/pc/docxdoclet/](http://www.csync.net/blog/pc/docxdoclet/)
+Das Original findet man hier: https://github.com/cottonspace/docxdoclet
 
-## How to use as Ant task
+## How to use in Maven POM / Wie man das in Maven einbindet.
 
 ```xml
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="javadoc">
-  <target name="javadoc">
-    <javadoc access="private" additionalparam="-encoding utf-8" packagenames="package,package,.." sourcepath="path,path,..">
-      <doclet name="doclet.docx.DocxDoclet" path="docxdoclet-1.0.jar">
-        <param name="-file" value="document.docx" />
-        <param name="-font1" value="Normal font name" />
-        <param name="-font2" value="Tagged font name" />
-        <param name="-title" value="SUBJECT" />
-        <param name="-subtitle" value="SUBTITLE" />
-        <param name="-version" value="VER 1.0" />
-        <param name="-company" value="XXX PROJECT" />
-        <param name="-copyright" value="COPYRIGHT" />
-      </doclet>
-    </javadoc>
-  </target>
-</project>
+  <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <show>public</show>
+                    <nohelp>false</nohelp>
+                    <detectLinks>true</detectLinks>
+                    <detectOfflineLinks>true</detectOfflineLinks>
+                    <links>   
+                        <link>target\apidocs</link>
+                    </links>
+               
+                    <doclet>doclet.docx.DocxDoclet</doclet>
+                    <docletPath>${project.baseUri}libs\docxdoclet-1.0.jar</docletPath>
+                    <useStandardDocletOptions>false</useStandardDocletOptions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+   </plugin>
 ```
 
 ## Copyright and License
