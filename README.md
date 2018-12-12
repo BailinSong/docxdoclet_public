@@ -6,6 +6,13 @@ Ein Doclet das Javadoc als MS-Word Dokument generiert. z.B. für automatische Ge
 
 Das Original findet man hier: https://github.com/cottonspace/docxdoclet
 
+## Changes / Änderungen
+
++ Maven based build scripts.
++ Translated to english and locale to en-US. 
++ Style changes to support Headings.
++ Text refactored to constants (so you can translate it into the language of your choice.)  
+
 ## How to use in Maven POM / Wie man das in Maven einbindet.
 
 ```xml
