@@ -8,12 +8,12 @@ public class Options {
   /**
    * CONSTS for modification of the created doc
    */
-  public static final String FONT_ARIAL = "Calibri";
+  public static final String FONT_DEFAULT_TEXT = "Calibri";
   public static final String FONT_CONSOLAS = "Consolas";
-  public static final String TEXT_PACKAGE = "package";
-  public static final String TEXT_CLASS = "class";
-  public static final String TEXT_INTERFACE = "interface";
-  public static final String TEXT_ALL_IMPLEMENTED_INTERFACES = "Implemented Interfaces:";
+  public static final String TEXT_PACKAGE = "package ";
+  public static final String TEXT_CLASS = "class ";
+  public static final String TEXT_INTERFACE = "interface ";
+  public static final String TEXT_ALL_IMPLEMENTED_INTERFACES = "implements:";
   public static final String TEXT_VERSION = "version:";
   public static final String TEXT_AUTHOR = "author:";
   public static final String TEXT_CONSTANT_DETAILS = "Constant details";
@@ -21,11 +21,16 @@ public class Options {
   public static final String TEXT_CONSTRUCTOR_DETAILS = "Constructor details";
   public static final String TEXT_METHOD_DETAIL = "Method details";
 
-  
   /**
    * Javadoc オプションの配列
    */
   public static String[][] options;
+  static int SIZE_COVER = 10;
+  static int SIZE_CHAPTER_TITLE = 20;
+  static int SIZE_TITLE_PARAGRAPH = 14;
+  static int SIZE_SUBTITLE_PARAGRAPH = 14;
+  static int SIZE_SECTION_PARAGRAPH = 10;
+  static int SIZE_DEFAULT = 10;
 
   /**
    * オプション文字列を取得します。

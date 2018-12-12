@@ -34,6 +34,20 @@ import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Tag;
 import com.sun.javadoc.ThrowsTag;
 import com.sun.javadoc.Type;
+import java.math.BigInteger;
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTColor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTHpsMeasure;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTOnOff;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTString;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTStyle;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STStyleType;
 
 /**
  * Microsoft Word 形式の Javadoc ドキュメントを作成する処理を提供します。
@@ -71,6 +85,8 @@ public class DocumentBuilder {
 
       // Word 文書を生成
       word = new XWPFDocument();
+
+      setStyles(word);
 
       // ヘッダとフッタを作成
       makeHeaderFooter(Options.getOption("title") + " " + Options.getOption("subtitle"), true);
@@ -155,7 +171,7 @@ public class DocumentBuilder {
     XWPFParagraph paragraph = new XWPFParagraph(ctp, word);
     XWPFRun run = paragraph.createRun();
     run.setText(str);
-    run.setFontFamily(Options.FONT_ARIAL);
+    run.setFontFamily(Options.FONT_DEFAULT_TEXT);
     run.setFontSize(8);
     if (isHeader) {
       paragraph.setAlignment(ParagraphAlignment.LEFT);
@@ -249,8 +265,8 @@ public class DocumentBuilder {
         newPage();
 
         // パッケージ名
-        run = DocumentStyle.setChapterTitleParagraph(word.createParagraph(), 0);
-        print(run, packageDoc.name() + " " + Options.TEXT_PACKAGE);
+        run = DocumentStyle.setChapterTitleParagraph(word.createParagraph(), 0, 1);
+        print(run, Options.TEXT_PACKAGE + packageDoc.name());
 
         // パッケージ説明
         str = packageDoc.commentText();
@@ -272,15 +288,15 @@ public class DocumentBuilder {
       print(run, classDoc.containingPackage().name() + " " + Options.TEXT_PACKAGE);
 
       // クラス
-      run = DocumentStyle.setChapterTitleParagraph(word.createParagraph(), 100);
+      run = DocumentStyle.setChapterTitleParagraph(word.createParagraph(), 100, 2);
       if (classDoc.isInterface()) {
-        print(run, classDoc.name() + " " + Options.TEXT_INTERFACE);
+        print(run, Options.TEXT_INTERFACE + classDoc.name());
       } else {
-        print(run, classDoc.name() + " " + Options.TEXT_CLASS);
+        print(run, Options.TEXT_CLASS + classDoc.name());
       }
 
       // 継承階層
-      List<ClassDoc> classDocs = new ArrayList<ClassDoc>();
+      List<ClassDoc> classDocs = new ArrayList<>();
       classDocs.add(classDoc);
       ClassDoc d = classDoc.superclass();
       while (d != null) {
@@ -513,7 +529,7 @@ public class DocumentBuilder {
         }
       }
     }
-    
+
     // Method signature 
     run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
     str = doc.modifiers();
@@ -550,7 +566,7 @@ public class DocumentBuilder {
       MethodDoc method = (MethodDoc) doc;
       if (!method.returnType().simpleTypeName().equals("void")) {
         run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-        print(run, "Return value:");
+        print(run, "returns:");
         str = method.returnType().simpleTypeName();
         Tag[] tags = method.tags("return");
         if (0 < tags.length) {
@@ -568,7 +584,7 @@ public class DocumentBuilder {
     Type[] exceptions = doc.thrownExceptionTypes();
     if (0 < exceptions.length) {
       run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-      print(run, "Throws exceptions:");
+      print(run, "throws:");
       for (int i = 0; i < exceptions.length; i++) {
         str = exceptions[i].simpleTypeName();
         String comment = getThrowsComment(doc.throwsTags(), exceptions[i].typeName());
@@ -649,5 +665,77 @@ public class DocumentBuilder {
         run.setText(line.substring(pos));
       }
     }
+  }
+
+  private void setStyles(XWPFDocument word) {
+    XWPFStyles styles = word.createStyles();
+
+    String heading1 = "Heading 1";
+    String heading2 = "Heading 2";
+    String heading3 = "Heading 3";
+    String heading4 = "Heading 4";
+    addCustomHeadingStyle(word, styles, heading1, 1, 36, "4288BC");
+    addCustomHeadingStyle(word, styles, heading2, 2, 28, "4288BC");
+    addCustomHeadingStyle(word, styles, heading3, 3, 24, "4288BC");
+    addCustomHeadingStyle(word, styles, heading4, 4, 20, "000000");
+  }
+
+  private static void addCustomHeadingStyle(XWPFDocument docxDocument, XWPFStyles styles, String strStyleId, int headingLevel, int pointSize, String hexColor) {
+
+    CTStyle ctStyle = CTStyle.Factory.newInstance();
+    ctStyle.setStyleId(strStyleId);
+
+    CTString styleName = CTString.Factory.newInstance();
+    styleName.setVal(strStyleId);
+    ctStyle.setName(styleName);
+
+    CTDecimalNumber indentNumber = CTDecimalNumber.Factory.newInstance();
+    indentNumber.setVal(BigInteger.valueOf(headingLevel));
+
+    // lower number > style is more prominent in the formats bar
+    ctStyle.setUiPriority(indentNumber);
+    
+
+    CTOnOff onoffnull = CTOnOff.Factory.newInstance();
+    ctStyle.setUnhideWhenUsed(onoffnull);
+
+    // style shows up in the formats bar
+    ctStyle.setQFormat(onoffnull);
+
+    // style defines a heading of the given level
+    CTPPr ppr = CTPPr.Factory.newInstance();
+    ppr.setOutlineLvl(indentNumber);
+    ctStyle.setPPr(ppr);
+
+    XWPFStyle style = new XWPFStyle(ctStyle);
+
+    CTHpsMeasure size = CTHpsMeasure.Factory.newInstance();
+    size.setVal(new BigInteger(String.valueOf(pointSize)));
+    CTHpsMeasure size2 = CTHpsMeasure.Factory.newInstance();
+    size2.setVal(new BigInteger("24"));
+
+    CTFonts fonts = CTFonts.Factory.newInstance();
+    fonts.setAscii(Options.FONT_DEFAULT_TEXT);
+
+    CTRPr rpr = CTRPr.Factory.newInstance();
+    rpr.setRFonts(fonts);
+    rpr.setSz(size);
+    rpr.setSzCs(size2);
+
+    CTColor color = CTColor.Factory.newInstance();
+    color.setVal(hexToBytes(hexColor));
+    rpr.setColor(color);
+    style.getCTStyle().setRPr(rpr);
+    // is a null op if already defined
+
+    style.setType(STStyleType.PARAGRAPH);
+    styles.addStyle(style);
+
+  }
+
+  public static byte[] hexToBytes(String hexString) {
+    HexBinaryAdapter adapter = new HexBinaryAdapter();
+    byte[] bytes = adapter.unmarshal(hexString);
+    return bytes;
   }
 }

@@ -15,193 +15,174 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSpacing;
  */
 public class DocumentStyle {
 
-	/**
-	 * 段落の行間を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param space
-	 *            行間
-	 */
-	private static void setLineSpacing(XWPFParagraph paragraph, int space) {
-		paragraph.setSpacingLineRule(LineSpacingRule.AUTO);
-		CTPPr ppr = paragraph.getCTP().getPPr();
-		if (ppr == null) {
-			ppr = paragraph.getCTP().addNewPPr();
-		}
-		CTSpacing spacing = ppr.isSetSpacing() ? ppr.getSpacing() : ppr.addNewSpacing();
-		spacing.setLine(BigInteger.valueOf(space));
-	}
+  /**
+   * 段落の行間を設定します。
+   *
+   * @param paragraph 段落
+   * @param space 行間
+   */
+  private static void setLineSpacing(XWPFParagraph paragraph, int space) {
+    paragraph.setSpacingLineRule(LineSpacingRule.AUTO);
+    CTPPr ppr = paragraph.getCTP().getPPr();
+    if (ppr == null) {
+      ppr = paragraph.getCTP().addNewPPr();
+    }
+    CTSpacing spacing = ppr.isSetSpacing() ? ppr.getSpacing() : ppr.addNewSpacing();
+    spacing.setLine(BigInteger.valueOf(space));
+  }
 
-	/**
-	 * 標準の段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param indent
-	 *            インデント幅 (インデント幅が 0 未満の場合はインデント幅を設定しません)
-	 * @return 文字出力ハンドル
-	 */
-	public static XWPFRun getDefaultRun(XWPFParagraph paragraph, int indent) {
+  /**
+   * 標準の段落を設定します。
+   *
+   * @param paragraph 段落
+   * @param indent set indent spacing from left
+   * @param fontsize the font size to set
+   * @return 文字出力ハンドル
+   */
+  public static XWPFRun getDefaultRun(XWPFParagraph paragraph, int indent, int fontsize) {
 
-		// 段落を設定
-		paragraph.setAlignment(ParagraphAlignment.LEFT);
-		if (0 <= indent) {
-			paragraph.setIndentFromLeft(indent);
-		}
+    // 段落を設定
+    paragraph.setAlignment(ParagraphAlignment.LEFT);
+    if (0 <= indent) {
+      paragraph.setIndentFromLeft(indent);
+    }
 
-		// 行間を設定
-		setLineSpacing(paragraph, 276);
+    // 行間を設定
+    setLineSpacing(paragraph, 276);
 
-		// 文字を設定
-		XWPFRun run = paragraph.createRun();
-		run.setFontFamily(Options.getOption("font1", Options.FONT_ARIAL));
-		run.setFontSize(9);
-		run.setBold(false);
-		run.setItalic(false);
+    // 文字を設定
+    XWPFRun run = paragraph.createRun();
+    run.setFontFamily(Options.getOption("font1", Options.FONT_DEFAULT_TEXT));
+    run.setFontSize(fontsize);
+    run.setBold(false);
+    run.setItalic(false);
 
-		// 出力ハンドルを返却
-		return run;
-	}
-  
-	/**
-	 * 表紙用段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param spaces
-	 *            段落の前の空白行
-	 * @return 文字出力ハンドル
-	 */
-	public static XWPFRun setCoverParagraph(XWPFParagraph paragraph, int spaces) {
+    // 出力ハンドルを返却
+    return run;
+  }
 
-		// デフォルト設定
-		XWPFRun run = getDefaultRun(paragraph, 0);
+  public static XWPFRun getDefaultRun(XWPFParagraph paragraph, int indent) {
+    return getDefaultRun(paragraph, indent, Options.SIZE_DEFAULT);
+  }
 
-		// 段落を設定
-		paragraph.setAlignment(ParagraphAlignment.CENTER);
-		paragraph.setSpacingBeforeLines(spaces);
+  /**
+   * 表紙用段落を設定します。
+   *
+   * @param paragraph 段落
+   * @param spaces 段落の前の空白行
+   * @return 文字出力ハンドル
+   */
+  public static XWPFRun setCoverParagraph(XWPFParagraph paragraph, int spaces) {
 
-		// 出力ハンドルを返却
-		return run;
-	}
+    // デフォルト設定
+    XWPFRun run = getDefaultRun(paragraph, 0, Options.SIZE_COVER);
 
-	/**
-	 * 章タイトル用段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param spaces
-	 *            段落の前の空白行
-	 * @return 文字出力ハンドル
-	 */
-	public static XWPFRun setChapterTitleParagraph(XWPFParagraph paragraph, int spaces) {
+    // 段落を設定
+    paragraph.setAlignment(ParagraphAlignment.CENTER);
+    paragraph.setSpacingBeforeLines(spaces);
 
-		// デフォルト設定
-		XWPFRun run = getDefaultRun(paragraph, 0);
+    // 出力ハンドルを返却
+    return run;
+  }
 
-		// 文字を設定
-		run.setFontSize(20);
-		run.setBold(true);
+  /**
+   * 章タイトル用段落を設定します。
+   *
+   * @param paragraph 段落
+   * @param spaces 段落の前の空白行
+   * @return 文字出力ハンドル
+   */
+  public static XWPFRun setChapterTitleParagraph(XWPFParagraph paragraph, int spaces, int depth) {
 
-		// 段落を設定
-		paragraph.setAlignment(ParagraphAlignment.LEFT);
-		paragraph.setSpacingBeforeLines(spaces);
+    // デフォルト設定
+    XWPFRun run = getDefaultRun(paragraph, 0, Options.SIZE_CHAPTER_TITLE);
 
-		// 出力ハンドルを返却
-		return run;
-	}
+    // 文字を設定
+    run.setBold(true);
 
-	/**
-	 * タイトル用段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param spaces
-	 *            段落の前の空白行
-	 * @return 文字出力ハンドル
-	 */
-	public static XWPFRun setTitleParagraph(XWPFParagraph paragraph, int spaces) {
+    // 段落を設定
+    paragraph.setAlignment(ParagraphAlignment.LEFT);
+    paragraph.setSpacingBeforeLines(spaces);
+    paragraph.setStyle("Heading "+depth);
 
-		// デフォルト設定
-		XWPFRun run = getDefaultRun(paragraph, 0);
+    // 出力ハンドルを返却
+    return run;
+  }
 
-		// 段落を設定
-		paragraph.setAlignment(ParagraphAlignment.LEFT);
-		paragraph.setSpacingBeforeLines(spaces);
-		paragraph.setFirstLineIndent(100);
-		paragraph.setBorderTop(Borders.BASIC_BLACK_DASHES);
-		paragraph.setBorderBottom(Borders.BASIC_BLACK_DASHES);
-		paragraph.setBorderLeft(Borders.BASIC_BLACK_DASHES);
-		paragraph.setBorderRight(Borders.BASIC_BLACK_DASHES);
+  /**
+   * タイトル用段落を設定します。
+   *
+   * @param paragraph 段落
+   * @param spaces 段落の前の空白行
+   * @return 文字出力ハンドル
+   */
+  public static XWPFRun setTitleParagraph(XWPFParagraph paragraph, int spaces) {
 
-		// 行間を設定
-		setLineSpacing(paragraph, 240);
+    // デフォルト設定
+    XWPFRun run = getDefaultRun(paragraph, 0, Options.SIZE_TITLE_PARAGRAPH);
 
-		// 文字を設定
-		run.setFontSize(14);
+    // 段落を設定
+    paragraph.setAlignment(ParagraphAlignment.LEFT);
+    paragraph.setSpacingBeforeLines(spaces);
+    paragraph.setFirstLineIndent(100);
+    paragraph.setBorderTop(Borders.BASIC_BLACK_DASHES);
+    paragraph.setBorderBottom(Borders.BASIC_BLACK_DASHES);
+    paragraph.setBorderLeft(Borders.BASIC_BLACK_DASHES);
+    paragraph.setBorderRight(Borders.BASIC_BLACK_DASHES);
 
-		// 出力ハンドルを返却
-		return run;
-	}
+    // 行間を設定
+    setLineSpacing(paragraph, 240);
 
-	/**
-	 * サブタイトル用段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param spaces
-	 *            段落の前の空白行
-	 * @return 文字出力ハンドル
-	 */
-	public static XWPFRun setSubTitleParagraph(XWPFParagraph paragraph, int spaces) {
+    // 出力ハンドルを返却
+    return run;
+  }
 
-		// デフォルト設定
-		XWPFRun run = getDefaultRun(paragraph, 0);
+  /**
+   * サブタイトル用段落を設定します。
+   *
+   * @param paragraph 段落
+   * @param spaces 段落の前の空白行
+   * @return 文字出力ハンドル
+   */
+  public static XWPFRun setSubTitleParagraph(XWPFParagraph paragraph, int spaces) {
 
-		// 段落を設定
-		paragraph.setAlignment(ParagraphAlignment.LEFT);
-		paragraph.setSpacingBeforeLines(spaces);
+    // デフォルト設定
+    XWPFRun run = getDefaultRun(paragraph, 0, Options.SIZE_SUBTITLE_PARAGRAPH);
 
-		// 文字を設定
-		run.setFontSize(14);
+    // 段落を設定
+    paragraph.setAlignment(ParagraphAlignment.LEFT);
+    paragraph.setSpacingBeforeLines(spaces);
 
-		// 出力ハンドルを返却
-		return run;
-	}
+    // 出力ハンドルを返却
+    return run;
+  }
 
-	/**
-	 * セクション用段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 * @param spaces
-	 *            段落の前の空白行
-	 * @return 文字出力ハンドル
-	 */
-	public static XWPFRun setSectionParagraph(XWPFParagraph paragraph, int spaces) {
+  /**
+   * セクション用段落を設定します。
+   *
+   * @param paragraph 段落
+   * @param spaces 段落の前の空白行
+   * @return 文字出力ハンドル
+   */
+  public static XWPFRun setSectionParagraph(XWPFParagraph paragraph, int spaces) {
 
-		// デフォルト設定
-		XWPFRun run = getDefaultRun(paragraph, 0);
+    // デフォルト設定
+    XWPFRun run = getDefaultRun(paragraph, 0, Options.SIZE_SECTION_PARAGRAPH);
 
-		// 段落を設定
-		paragraph.setAlignment(ParagraphAlignment.LEFT);
-		paragraph.setSpacingBeforeLines(spaces);
+    // 段落を設定
+    paragraph.setAlignment(ParagraphAlignment.LEFT);
+    paragraph.setSpacingBeforeLines(spaces);
 
-		// 文字を設定
-		run.setFontSize(10);
+    // 出力ハンドルを返却
+    return run;
+  }
 
-		// 出力ハンドルを返却
-		return run;
-	}
-
-	/**
-	 * 区切り線用段落を設定します。
-	 *
-	 * @param paragraph
-	 *            段落
-	 */
-	public static void setSeparatorParagraph(XWPFParagraph paragraph) {
-		paragraph.setBorderBottom(Borders.BASIC_BLACK_DASHES);
-	}
+  /**
+   * Add aseparator line (border line) below the paragraph
+   *
+   * @param paragraph 段落
+   */
+  public static void setSeparatorParagraph(XWPFParagraph paragraph) {
+    paragraph.setBorderBottom(Borders.BASIC_BLACK_DASHES);
+  }
 }
