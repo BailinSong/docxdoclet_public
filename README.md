@@ -10,31 +10,31 @@ Das Original findet man hier: https://github.com/cottonspace/docxdoclet
 
 ```xml
   <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <show>public</show>
-                    <nohelp>false</nohelp>
-                    <detectLinks>true</detectLinks>
-                    <detectOfflineLinks>true</detectOfflineLinks>
-                    <links>   
-                        <link>target\apidocs</link>
-                    </links>
+     <groupId>org.apache.maven.plugins</groupId>
+     <artifactId>maven-javadoc-plugin</artifactId>
+     <version>3.0.0</version>
+     <configuration>
+        <show>public</show>
+        <nohelp>false</nohelp>
+        <detectLinks>true</detectLinks>
+        <detectOfflineLinks>true</detectOfflineLinks>
+        <links>   
+           <link>target\apidocs</link>
+        </links>
                
-                    <doclet>doclet.docx.DocxDoclet</doclet>
-                    <docletPath>${project.baseUri}libs\docxdoclet-1.0.jar</docletPath>
-                    <useStandardDocletOptions>false</useStandardDocletOptions>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-   </plugin>
+        <doclet>doclet.docx.DocxDoclet</doclet>
+        <docletPath>${project.baseUri}libs\docxdoclet-1.0.jar</docletPath>
+        <useStandardDocletOptions>false</useStandardDocletOptions>
+     </configuration>
+     <executions>
+       <execution>
+         <id>attach-javadocs</id>
+         <goals>
+            <goal>jar</goal>
+         </goals>
+       </execution>
+     </executions>
+  </plugin>
 ```
 
 ## Copyright and License
