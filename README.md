@@ -2,6 +2,8 @@
 Doclet which creates Javadoc as Microsoft Word document.
 Ein Doclet das Javadoc als MS-Word Dokument generiert. z.B. für automatische Generierung von Schnittstellenbeschreibungen und APIs ;-) 
 
+see / siehe auch: https://maven.apache.org/plugins/maven-javadoc-plugin/index.html
+
 ## Source / Quelle
 
 Das Original findet man hier: https://github.com/cottonspace/docxdoclet
