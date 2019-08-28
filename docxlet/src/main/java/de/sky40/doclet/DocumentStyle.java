@@ -1,4 +1,4 @@
-package doclet.docx;
+package de.sky40.doclet;
 
 import java.math.BigInteger;
 

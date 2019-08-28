@@ -1,4 +1,4 @@
-package doclet.docx;
+package de.sky40.doclet;
 
 /**
  * 実行時オプションを格納するクラスです。
