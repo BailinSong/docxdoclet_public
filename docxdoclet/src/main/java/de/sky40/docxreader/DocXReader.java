@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.sky40.docxreader;
 
 import java.io.File;
@@ -17,9 +12,8 @@ import org.docx4j.openpackaging.parts.PartName;
 import org.docx4j.openpackaging.parts.Parts;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
-import org.docx4j.openpackaging.parts.opendope.ComponentsPart;
 import org.docx4j.wml.Document;
-import org.docx4j.wml.Styles;
+import org.docx4j.wml.P;
 
 /**
  * Reads docx files and matches with templates.
@@ -31,7 +25,29 @@ public class DocXReader {
   private void findStyle(String templateName, MainDocumentPart doc) throws Docx4JException {
     Document document = doc.getContents();
     log(document);
-    List<Object> content = document.getContent();
+    List<Object> contents = document.getContent();
+    for (Object content : contents) {
+      log(content.getClass().getCanonicalName());
+      if (content instanceof org.docx4j.wml.P) {
+        P paragraph = (org.docx4j.wml.P) content;
+        String text = paragraph.toString();
+        log(paragraph.getClass().getCanonicalName());
+        log("text:" + text);
+        /*log("paraId " + paragraph.getParaId());
+        log("RsidDel " + paragraph.getRsidDel());
+        log("RsidP " + paragraph.getRsidP());
+        log("RsidR " + paragraph.getRsidR());
+        log("RsidDefault " + paragraph.getRsidRDefault());
+        log("RPr " + paragraph.getRsidRPr());*/
+        if (text.toLowerCase().equals(templateName)) {
+          List<Object> paragraphContents = paragraph.getContent();
+          for (Object pr : paragraphContents) {
+            log(pr.getClass().getCanonicalName());
+            log(pr);
+          }
+        }
+      }
+    }
   }
 
   private void log(Object obj) {
@@ -50,12 +66,11 @@ public class DocXReader {
     Parts parts = processingPackage.getParts();
     String contentType = processingPackage.getContentType();
     MainDocumentPart mainDoc = processingPackage.getMainDocumentPart();
+    findStyle("packagetemplate", mainDoc);
 
-    findStyle("package_template", mainDoc);
-    
-    
     HashMap<PartName, Part> partsMap = parts.getParts();
 
+    StyleDefinitionsPart stylePart = (StyleDefinitionsPart) partsMap.get(new PartName("/word/styles.xml"));
     logMap(partsMap);
     log(contentType);
   }

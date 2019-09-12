@@ -46,7 +46,7 @@
                     </links>
                
                     <doclet>de.sky40.doclet.DocxDoclet</doclet>
-                    <docletPath>D:\repositories\sky40\docXdoclet\target\docxdoclet-1.0-jar-with-dependencies.jar</docletPath>
+                    <docletPath>C:\Users\HStilke\Repositories\docxdoclet\docxdoclet\target\docxdoclet-1.0-jar-with-dependencies.jar</docletPath>
                     <useStandardDocletOptions>false</useStandardDocletOptions>
                     <additionalOptions>
                         <additionalOption>-title</additionalOption>
