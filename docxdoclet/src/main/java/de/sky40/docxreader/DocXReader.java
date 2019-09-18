@@ -14,6 +14,9 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
 import org.docx4j.wml.Document;
 import org.docx4j.wml.P;
+import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase;
+import org.docx4j.wml.Style;
 
 /**
  * Reads docx files and matches with templates.
@@ -22,32 +25,49 @@ import org.docx4j.wml.P;
  */
 public class DocXReader {
 
-  private void findStyle(String templateName, MainDocumentPart doc) throws Docx4JException {
+  private String findStyleIdInDocument(String templateName, MainDocumentPart doc) throws Docx4JException {
     Document document = doc.getContents();
     log(document);
     List<Object> contents = document.getContent();
     for (Object content : contents) {
-      log(content.getClass().getCanonicalName());
+      // log(content.getClass().getCanonicalName());
       if (content instanceof org.docx4j.wml.P) {
         P paragraph = (org.docx4j.wml.P) content;
-        String text = paragraph.toString();
-        log(paragraph.getClass().getCanonicalName());
-        log("text:" + text);
-        /*log("paraId " + paragraph.getParaId());
-        log("RsidDel " + paragraph.getRsidDel());
-        log("RsidP " + paragraph.getRsidP());
-        log("RsidR " + paragraph.getRsidR());
-        log("RsidDefault " + paragraph.getRsidRDefault());
-        log("RPr " + paragraph.getRsidRPr());*/
-        if (text.toLowerCase().equals(templateName)) {
-          List<Object> paragraphContents = paragraph.getContent();
-          for (Object pr : paragraphContents) {
-            log(pr.getClass().getCanonicalName());
-            log(pr);
-          }
+        String styleId = findStyleIdInParagraph(paragraph, templateName);
+        if (styleId != null) {
+          return styleId;
         }
       }
     }
+    return null;
+  }
+
+  private String findStyleIdInParagraph(P paragraph, String templateName) {
+    String text = paragraph.toString();
+    //log(paragraph.getClass().getCanonicalName());
+    /*log("paraId " + paragraph.getParaId());
+    log("RsidDel " + paragraph.getRsidDel());
+    log("RsidP " + paragraph.getRsidP());
+    log("RsidR " + paragraph.getRsidR());
+    log("RsidDefault " + paragraph.getRsidRDefault());
+    log("RPr " + paragraph.getRsidRPr());*/
+    if (text.toLowerCase().equals(templateName)) {
+      log("text '" + text + "' matches template name");
+
+      PPr paragraphProps = paragraph.getPPr();
+      PPrBase.PStyle pStyle = paragraphProps.getPStyle();
+      String styleId = pStyle.getVal();
+      log("paragraph styleId:" + styleId);
+      List<Object> contents = paragraph.getContent();
+      for (Object content : contents) {
+        if (content instanceof org.docx4j.wml.P) {
+        }
+        if (content instanceof org.docx4j.wml.PPr) {
+        }
+      }
+      return styleId;
+    }
+    return null;
   }
 
   private void log(Object obj) {
@@ -66,12 +86,19 @@ public class DocXReader {
     Parts parts = processingPackage.getParts();
     String contentType = processingPackage.getContentType();
     MainDocumentPart mainDoc = processingPackage.getMainDocumentPart();
-    findStyle("packagetemplate", mainDoc);
+    String packageStyleId = findStyleIdInDocument("packagetemplate", mainDoc);
+    String classStyleId = findStyleIdInDocument("classtemplate", mainDoc);
+    String methodStyleId = findStyleIdInDocument("methodtemplate", mainDoc);
 
     HashMap<PartName, Part> partsMap = parts.getParts();
 
     StyleDefinitionsPart stylePart = (StyleDefinitionsPart) partsMap.get(new PartName("/word/styles.xml"));
     logMap(partsMap);
+
+    Style packageStyle = stylePart.getStyleById(packageStyleId);
+
+    log(packageStyle.toString());
+
     log(contentType);
   }
 }
