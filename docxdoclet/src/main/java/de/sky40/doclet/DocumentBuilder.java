@@ -2,26 +2,12 @@ package de.sky40.doclet;
 
 import com.sun.javadoc.AnnotationDesc;
 import com.sun.javadoc.AnnotationTypeDoc;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
-import org.apache.poi.xwpf.usermodel.BreakType;
-import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.ExecutableMemberDoc;
@@ -34,165 +20,137 @@ import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Tag;
 import com.sun.javadoc.ThrowsTag;
 import com.sun.javadoc.Type;
-import java.math.BigInteger;
+import de.sky40.docxreader.DocXWriter;
+import de.sky40.docxreader.ParamsInfo;
+import de.sky40.docxreader.domain.StyleName;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import org.apache.poi.xwpf.usermodel.XWPFStyle;
-import org.apache.poi.xwpf.usermodel.XWPFStyles;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTColor;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTHpsMeasure;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTOnOff;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTString;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTStyle;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.STStyleType;
+import org.docx4j.openpackaging.exceptions.Docx4JException;
 
 /**
- * Microsoft Word 形式の Javadoc ドキュメントを作成する処理を提供します。
+ * Builds Microsoft Word (docx Format) files from JavaDoc
  */
 public class DocumentBuilder {
 
   /**
-   * Word 文書
+   * A sequence of spaces.
    */
-  private XWPFDocument word;
+  public static final String LONGSPACE = "   ";
 
   /**
-   * Javadoc のルートドキュメント
+   * The options for building the document.
+   */
+  private final BuilderOptions builderOptions;
+
+  /**
+   * A Writer to write styled paragraphs and runs into a docx document.
+   */
+  private final DocXWriter writer;
+
+  /**
+   * The Javadoc root node
    */
   private RootDoc root;
 
   /**
-   * 出力済のパッケージを記憶するためのリスト
+   * Array of the packages
    */
-  private List<PackageDoc> packages;
+  private final List<PackageDoc> packages = new ArrayList<>();
 
   /**
-   * ドキュメントを生成します。
+   * Creates a document builder.
    *
-   * @param rootDoc Javadoc のルートドキュメント
-   * @throws IOException
+   * @param builderOptions The options to use in the build process.
+   * @param writer A document writer to write into the doc.
    */
-  public void create(RootDoc rootDoc) throws IOException {
+  public DocumentBuilder(BuilderOptions builderOptions, DocXWriter writer) {
+    this.builderOptions = builderOptions;
+    this.writer = writer;
+  }
 
-    // 例外捕獲
-    try {
+  /**
+   * Creates the doc.
+   *
+   * @param rootDoc Javadoc root node
+   * @throws IOException
+   * @throws org.docx4j.openpackaging.exceptions.Docx4JException
+   */
+  public void create(RootDoc rootDoc) throws IOException, Docx4JException {
 
-      // Javadoc のルートドキュメントを取得
-      root = rootDoc;
+    root = rootDoc;
+    // create pages for all classes
+    writeClassPages();
+    // write to file
+    writer.write();
+  }
 
-      // Word 文書を生成
-      word = new XWPFDocument();
+  /**
+   * Find the comment of a method parameter by parameter name.
+   *
+   * @param doc The method/constructor to find the comment.
+   * @param name the name of the parameter
+   *
+   * @return an info object on the parameter with name "name"
+   */
+  private ParamsInfo findCommentedParameterByName(ExecutableMemberDoc doc, String name) {
 
-      setStyles(word);
+    if (doc == null) {
+      return null;
+    }
 
-      // ヘッダとフッタを作成
-      makeHeaderFooter(Options.getOption("title") + " " + Options.getOption("subtitle"), true);
-      makeHeaderFooter(Options.getOption("copyright"), false);
-
-      // 表紙を作成
-      makeCoverPage();
-
-      // 出力済パッケージリストを初期化
-      packages = new ArrayList<>();
-
-      // 全てのクラスを出力
-      makeClassPages();
-
-      // Word ファイル保存
-      word.write(new FileOutputStream(Options.getOption("file", "document.docx")));
-
-    } finally {
-
-      // Word 文書を閉じる
-      if (word != null) {
-        try {
-          (word).close();
-        } catch (Exception e) {
+    // find parameters
+    Parameter[] parameters = doc.parameters();
+    if (0 < parameters.length) {
+      // iterate all parameters of method/constructor
+      for (Parameter parameter : parameters) {
+        if (name.equals(parameter.name())) {
+          // build comment
+          String comment = getParamComment(doc.paramTags(), parameter.name());
+          if (!comment.isEmpty()) {
+            return new ParamsInfo(parameter, doc);
+          }
         }
       }
     }
-  }
 
-  /**
-   * 表紙を作成します。
-   */
-  private void makeCoverPage() {
-
-    // POI 操作
-    XWPFRun run;
-
-    // 日付を取得
-    Locale locale = new Locale("en", "US", "US");
-    Calendar cal = Calendar.getInstance(locale);
-    DateFormat jformat = new SimpleDateFormat("yyyy/MM/dd", locale);
-    String stamp = jformat.format(cal.getTime());
-
-    // 表紙の情報を出力
-    run = DocumentStyle.setCoverParagraph(word.createParagraph(), 800);
-    run.setFontSize(28);
-    run.setBold(true);
-    run.setText(Options.getOption("title"));
-    run = DocumentStyle.setCoverParagraph(word.createParagraph(), 200);
-    run.setFontSize(20);
-    run.setBold(true);
-    run.setText(Options.getOption("subtitle"));
-    run = DocumentStyle.setCoverParagraph(word.createParagraph(), 300);
-    run.setFontSize(18);
-    run.setText(Options.getOption("version"));
-    run = DocumentStyle.setCoverParagraph(word.createParagraph(), 800);
-    run.setFontSize(16);
-    run.setText(stamp);
-    run = DocumentStyle.setCoverParagraph(word.createParagraph(), 300);
-    run.setFontSize(20);
-    run.setText(Options.getOption("company"));
-  }
-
-  /**
-   * 改ページを挿入します。
-   */
-  private void newPage() {
-    word.getLastParagraph().createRun().addBreak(BreakType.PAGE);
-  }
-
-  /**
-   * ヘッダとフッタを作成します。
-   *
-   * @param str 出力する文字列
-   * @param isHeader ヘッダの場合は true, フッタの場合は false
-   * @throws IOException
-   */
-  private void makeHeaderFooter(String str, boolean isHeader) throws IOException {
-    CTSectPr sect = word.getDocument().getBody().addNewSectPr();
-    XWPFHeaderFooterPolicy policy = new XWPFHeaderFooterPolicy(word, sect);
-    CTP ctp = CTP.Factory.newInstance();
-    XWPFParagraph paragraph = new XWPFParagraph(ctp, word);
-    XWPFRun run = paragraph.createRun();
-    run.setText(str);
-    run.setFontFamily(Options.FONT_DEFAULT_TEXT);
-    run.setFontSize(8);
-    if (isHeader) {
-      paragraph.setAlignment(ParagraphAlignment.LEFT);
-      XWPFParagraph[] paragraphs = new XWPFParagraph[]{paragraph};
-      policy.createHeader(XWPFHeaderFooterPolicy.DEFAULT, paragraphs);
+    // find in super type if possible
+    if (!doc.isConstructor()) {
+      // go to super method
+      MethodDoc method = (MethodDoc) doc;
+      return findCommentedParameterByName(method.overriddenMethod(), name);
     } else {
-      CTP ctp2 = CTP.Factory.newInstance();
-      ctp2.addNewR().addNewPgNum();
-      XWPFParagraph pagenum = new XWPFParagraph(ctp2, word);
-      pagenum.setAlignment(ParagraphAlignment.CENTER);
-      paragraph.setAlignment(ParagraphAlignment.RIGHT);
-      XWPFParagraph[] paragraphs = new XWPFParagraph[]{pagenum, paragraph};
-      policy.createFooter(XWPFHeaderFooterPolicy.DEFAULT, paragraphs);
+      // do not traverse constructor methods, because they are not inherited with @Override
     }
+
+    // check the docs of the interfaces of the type
+    ClassDoc classDoc = doc.containingClass();
+    ClassDoc[] interfaces = classDoc.interfaces();
+    // iterate all interfaces
+    if (interfaces != null) {
+      for (ClassDoc interfaceDoc : interfaces) {
+        MethodDoc[] methods = interfaceDoc.methods();
+        if (methods != null) // iterate methods of interfaces
+        {
+          for (MethodDoc ifcMethod : methods) {
+            if (ifcMethod.name().equals(doc.name())) {
+              if (ifcMethod.signature().equals(doc.signature())) {
+                // method with same signature in interface was found
+                return findCommentedParameterByName(ifcMethod, name);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
-   * 実行メソッドの引数の書式を文字列で取得します。
+   * Build a method signature from parameters. Replaces commons like java.lang,
+   * java.io, etc.
    *
-   * @param parameters 引数の情報
-   * @return 引数の書式を示した文字列
+   * @param parameters The method parameters
+   * @return a signature string
    */
   private String getParamSignature(Parameter[] parameters) {
     StringBuilder sb = new StringBuilder();
@@ -210,11 +168,12 @@ public class DocumentBuilder {
   }
 
   /**
-   * パラメタに設定されたコメントを取得します。
+   * Get the comment of a parameter by param name.
    *
-   * @param tags タグ情報
-   * @param name パラメタ名
-   * @return コメント情報
+   * @param tags the tags to search in
+   * @param name the name to find
+   * @return the comment of the parameter with name "name", or empty String if
+   * none was found.
    */
   private String getParamComment(ParamTag[] tags, String name) {
     for (ParamTag tag : tags) {
@@ -226,11 +185,12 @@ public class DocumentBuilder {
   }
 
   /**
-   * 例外に設定されたコメントを取得します。
+   * Get the comment of a thrown exception by name.
    *
-   * @param tags タグ情報
-   * @param name 例外クラスの名前
-   * @return コメント情報
+   * @param tags the tags to search in
+   * @param name the name to find
+   * @return the comment of the exception with name "name", or empty String if
+   * none was found.
    */
   private String getThrowsComment(ThrowsTag[] tags, String name) {
     for (ThrowsTag tag : tags) {
@@ -242,235 +202,212 @@ public class DocumentBuilder {
   }
 
   /**
-   * 全てのクラスの情報を出力します。
+   * Write a doc on the implemented interfaces of a class.
+   * 
+   * @param classDoc The class documentation node.
    */
-  private void makeClassPages() {
-
-    // 出力文字
-    String str;
-
-    // 全てのクラス
-    for (ClassDoc classDoc : root.classes()) {
-
-      // POI 操作
-      XWPFRun run;
-
-      // パッケージ
-      PackageDoc packageDoc = classDoc.containingPackage();
-
-      // 新たなパッケージの場合
-      if (!packages.contains(packageDoc)) {
-
-        // 改ページ
-        newPage();
-
-        // パッケージ名
-        run = DocumentStyle.setChapterTitleParagraph(word.createParagraph(), 0, 1);
-        print(run, Options.TEXT_PACKAGE + packageDoc.name());
-
-        // パッケージ説明
-        str = packageDoc.commentText();
-        if (!str.isEmpty()) {
-          DocumentStyle.setSeparatorParagraph(word.createParagraph());
-          run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
-          print(run, str);
-        }
-
-        // 出力済パッケージに追加
-        packages.add(packageDoc);
-      }
-
-      // 改ページ
-      newPage();
-
-      // パッケージ名
-      run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
-      print(run, classDoc.containingPackage().name() + " " + Options.TEXT_PACKAGE);
-
-      // クラス
-      run = DocumentStyle.setChapterTitleParagraph(word.createParagraph(), 100, 2);
-      if (classDoc.isInterface()) {
-        print(run, Options.TEXT_INTERFACE + classDoc.name());
-      } else {
-        print(run, Options.TEXT_CLASS + classDoc.name());
-      }
-
-      // 継承階層
-      List<ClassDoc> classDocs = new ArrayList<>();
-      classDocs.add(classDoc);
-      ClassDoc d = classDoc.superclass();
-      while (d != null) {
-        classDocs.add(d);
-        d = d.superclass();
-      }
-      run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
-      Collections.reverse(classDocs);
-      for (int i = 0; i < classDocs.size(); i++) {
+  private void writeClassImplementedInterfaces(ClassDoc classDoc) {
+    // write implemented interfaces
+    if (0 < classDoc.interfaces().length) {
+      writer.addLineBreak();
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "implements:");
+      
+      for (int i = 0; i < classDoc.interfaces().length; i++) {
         if (0 < i) {
-          run.addBreak();
+          writer.addRun(",");
         }
-        str = "";
-        for (int j = 1; j < i; j++) {
-          str += "　　 ";
-        }
-        if (0 < i) {
-          str += "　└ ";
-        }
-        str += classDocs.get(i).qualifiedName();
-        print(run, str);
-      }
-
-      // インターフェイス
-      if (0 < classDoc.interfaces().length) {
-        run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-        print(run, Options.TEXT_ALL_IMPLEMENTED_INTERFACES);
-        str = "";
-        for (int i = 0; i < classDoc.interfaces().length; i++) {
-          if (0 < i) {
-            str += ", ";
-          }
-          str += classDoc.interfaces()[i].qualifiedName();
-        }
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-        print(run, str);
-      }
-
-      // クラス説明
-      run = DocumentStyle.setSubTitleParagraph(word.createParagraph(), 200);
-      print(run, classDoc.modifiers() + " " + classDoc.name());
-      run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
-      print(run, classDoc.commentText());
-
-      // バージョン
-      Tag[] versionTags = classDoc.tags("version");
-      if (0 < versionTags.length) {
-        run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-        print(run, Options.TEXT_VERSION);
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-        for (int i = 0; i < versionTags.length; i++) {
-          if (0 < i) {
-            run.addBreak();
-          }
-          print(run, versionTags[i].text());
-        }
-      }
-
-      // 作成者
-      Tag[] authorTags = classDoc.tags("author");
-      if (0 < authorTags.length) {
-        run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-        print(run, Options.TEXT_AUTHOR);
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-        for (int i = 0; i < authorTags.length; i++) {
-          if (0 < i) {
-            run.addBreak();
-          }
-          print(run, authorTags[i].text());
-        }
-      }
-
-      // 全ての定数
-      if (0 < classDoc.enumConstants().length) {
-        boolean printText = false;
-        for (int i = 0; i < classDoc.enumConstants().length; i++) {
-          if (classDoc.enumConstants()[i].isPublic()) {
-            printText = true;
-            break;
-          }
-        }
-        if (printText) {
-          run = DocumentStyle.setTitleParagraph(word.createParagraph(), 100);
-          print(run, Options.TEXT_CONSTANT_DETAILS);
-          for (int i = 0; i < classDoc.enumConstants().length; i++) {
-            if (classDoc.enumConstants()[i].isPublic()) {
-              if (0 < i) {
-                DocumentStyle.setSeparatorParagraph(word.createParagraph());
-              }
-              writeFieldDoc(classDoc.enumConstants()[i]);
-            }
-          }
-        }
-      }
-
-      // 全てのフィールド
-      if (0 < classDoc.fields().length) {
-        boolean printText = false;
-        for (int i = 0; i < classDoc.fields().length; i++) {
-          if (classDoc.fields()[i].isPublic()) {
-            printText = true;
-            break;
-          }
-        }
-        if (printText) {
-          run = DocumentStyle.setTitleParagraph(word.createParagraph(), 100);
-          print(run, Options.TEXT_FIELD_DETAILS);
-          for (int i = 0; i < classDoc.fields().length; i++) {
-            if (classDoc.fields()[i].isPublic()) {
-              if (0 < i) {
-                DocumentStyle.setSeparatorParagraph(word.createParagraph());
-              }
-              writeFieldDoc(classDoc.fields()[i]);
-            }
-          }
-        }
-      }
-
-      // 全てのコンストラクタ
-      if (0 < classDoc.constructors().length) {
-        boolean printText = false;
-        for (int i = 0; i < classDoc.constructors().length; i++) {
-          if (classDoc.constructors()[i].isPublic()) {
-            printText = true;
-            break;
-          }
-        }
-        if (printText) {
-          run = DocumentStyle.setTitleParagraph(word.createParagraph(), 100);
-          print(run, Options.TEXT_CONSTRUCTOR_DETAILS);
-          for (int i = 0; i < classDoc.constructors().length; i++) {
-            if (classDoc.constructors()[i].isPublic()) {
-              if (0 < i) {
-                DocumentStyle.setSeparatorParagraph(word.createParagraph());
-              }
-              writeMemberDoc(classDoc.constructors()[i]);
-            }
-          }
-        }
-      }
-
-      // 全てのメソッド
-      if (0 < classDoc.methods().length) {
-        boolean printText = false;
-        for (int i = 0; i < classDoc.methods().length; i++) {
-          if (classDoc.methods()[i].isPublic()) {
-            printText = true;
-            break;
-          }
-        }
-        if (printText) {
-          run = DocumentStyle.setTitleParagraph(word.createParagraph(), 100);
-          print(run, Options.TEXT_METHOD_DETAIL);
-          for (int i = 0; i < classDoc.methods().length; i++) {
-            if (classDoc.methods()[i].isPublic()) {
-              if (0 < i) {
-                DocumentStyle.setSeparatorParagraph(word.createParagraph());
-              }
-              writeMemberDoc(classDoc.methods()[i]);
-            }
-          }
-        }
+        writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), " " + classDoc.interfaces()[i].qualifiedName());
       }
     }
   }
 
   /**
-   * 全てのフィールドの情報を出力します。
+   * Write the classes inheritance tree into the document.
    *
-   * @param doc メンバ情報
+   * @param classDoc The class documentation node to use.
    */
+  private void writeClassInheritanceTree(ClassDoc classDoc) {
+    String str;
+    // write class inheritance docs
+    List<ClassDoc> classDocs = new ArrayList<>();
+    classDocs.add(classDoc);
+    ClassDoc d = classDoc.superclass();
+    while (d != null) {
+      classDocs.add(d);
+      d = d.superclass();
+    }
+    Collections.reverse(classDocs);
+    for (int i = 0; i < classDocs.size(); i++) {
+      str = "";
+      for (int j = 1; j < i; j++) {
+        str += "　　 ";
+      }
+      if (0 < i) {
+        str += "　└ ";
+      }
+      str += classDocs.get(i).qualifiedName();
+      writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), str);
+      writer.addLineBreak();
+    }
+  }
+
+  /**
+   * Writes the name of the class as a new chapter.
+   *
+   * @param classDoc the class documentation node.
+   */
+  private void writeClassNameParagraph(ClassDoc classDoc) {
+    if (classDoc.isEnum()) {
+      writer.addStyledParagraph(writer.findStyle(StyleName.CLASS), BuilderOptions.TEXT_ENUM + classDoc.name());
+    } else if (classDoc.isInterface()) {
+      writer.addStyledParagraph(writer.findStyle(StyleName.CLASS), BuilderOptions.TEXT_INTERFACE + classDoc.name());
+    } else {
+      writer.addStyledParagraph(writer.findStyle(StyleName.CLASS), BuilderOptions.TEXT_CLASS + classDoc.name());
+    }
+  }
+
+  /**
+   * Makes a new chapter for every package and a subchapter for every class and
+   * writes to the document.
+   */
+  private void writeClassPages() {
+
+    String str;
+
+    // iterate all classes
+    for (ClassDoc classDoc : root.classes()) {
+
+      PackageDoc packageDoc = classDoc.containingPackage();
+
+      // Create new chapter with package description if it does not exist yet.
+      if (!packages.contains(packageDoc)) {
+
+        writer.addPageBreak();
+        str = BuilderOptions.TEXT_PACKAGE + packageDoc.name();
+        writer.addStyledParagraph(writer.findStyle(StyleName.PACKAGE), str);
+
+        writeComment(packageDoc.commentText());
+
+        packages.add(packageDoc);
+      }
+
+      // begin a new page for every class
+      writer.addPageBreak();
+      writer.closeParagraph();
+
+      // write class/interface name as a new chapter
+      writeClassNameParagraph(classDoc);
+
+      // write the class inheritance tree
+      writeClassInheritanceTree(classDoc);
+
+       // write implemented interfaces
+      writeClassImplementedInterfaces(classDoc);
+      
+      writer.closeParagraph();
+
+      // write modifiers and name
+      writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), classDoc.modifiers() + " " + classDoc.name());
+      writer.addLineBreak();
+      // write comment on class
+      if (!classDoc.commentText().isEmpty()) {
+        writeComment(classDoc.commentText());
+        writer.addLineBreak();
+      } else {
+        writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on class/interface]");
+        writer.addLineBreak();
+      }
+
+      writer.addLineBreak();
+
+      writeClassVersionsAndAuthors(classDoc);
+      writeClassMembers(classDoc);
+
+      writer.closeParagraph();
+    }
+  }
+
+  /**
+   * Write all methods, fields, constructors etc of class or interface.
+   *
+   * @param classDoc The class to document.
+   */
+  private void writeClassMembers(ClassDoc classDoc) {
+    // public enum constants
+    if (0 < classDoc.enumConstants().length) {
+      for (int i = 0; i < classDoc.enumConstants().length; i++) {
+        if (classDoc.enumConstants()[i].isPublic() || builderOptions.isAccessLevelPrivate()) {
+          writeFieldDoc(classDoc.enumConstants()[i]);
+        }
+      }
+    }
+
+    // fields
+    if (0 < classDoc.fields().length) {
+      for (int i = 0; i < classDoc.fields().length; i++) {
+        // public fields
+        if (classDoc.fields()[i].isPublic() || builderOptions.isAccessLevelPrivate()) {
+          writeFieldDoc(classDoc.fields()[i]);
+        }
+      }
+    }
+
+    // constructors
+    if (!classDoc.isAbstract()) {
+      if (0 < classDoc.constructors().length) {
+        for (int i = 0; i < classDoc.constructors().length; i++) {
+          if (classDoc.constructors()[i].isPublic() || builderOptions.isAccessLevelPrivate()) {
+            if (0 < i) {
+              writer.addLineBreak();
+            }
+            writeMemberDoc(classDoc.constructors()[i]);
+          }
+        }
+      }
+    }
+
+    // write methods
+    if (0 < classDoc.methods().length) {
+      for (int i = 0; i < classDoc.methods().length; i++) {
+        if (classDoc.methods()[i].isPublic() || builderOptions.isAccessLevelPrivate()) {
+          writeMemberDoc(classDoc.methods()[i]);
+        }
+      }
+    }
+  }
+
+  private void writeClassVersionsAndAuthors(ClassDoc classDoc) {
+    // write version info
+    Tag[] versionTags = classDoc.tags("version");
+    if (0 < versionTags.length) {
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "version:");
+      for (int i = 0; i < versionTags.length; i++) {
+        String text = " " + versionTags[i].text();
+        if (0 < i) {
+          text = "," + text;
+        }
+        writer.addRun(text);
+      }
+      writer.addLineBreak();
+    }
+
+    // write authors info
+    Tag[] authorTags = classDoc.tags("author");
+    if (0 < authorTags.length) {
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "author:");
+      for (int i = 0; i < authorTags.length; i++) {
+        String text = " " + authorTags[i].text();
+        if (0 < i) {
+          text = "," + text;
+        }
+        writer.addRun(text);
+      }
+      writer.addLineBreak();
+    }
+  }
+
   private void writeFieldDoc(MemberDoc doc) {
 
-    // 種類名
     String fieldType;
     if (doc.isEnumConstant()) {
       fieldType = "Enum constant";
@@ -480,27 +417,24 @@ public class DocumentBuilder {
       fieldType = "Field";
     }
 
-    // フィールド情報
-    XWPFRun run;
-    run = DocumentStyle.setSubTitleParagraph(word.createParagraph(), 100);
-    print(run, doc.name() + " " + fieldType);
-    run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
-    print(run, doc.modifiers() + " " + doc.name());
-    run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-    print(run, doc.commentText());
+    writer.addStyledParagraph(writer.findStyle(StyleName.METHOD), doc.name() + " " + fieldType);
+
+    writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), doc.modifiers() + " " + doc.name());
+    writer.addLineBreak();
+
+    if (!doc.commentText().isEmpty()) {
+      writeComment(doc.commentText());
+    } else {
+      writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on field]");
+    }
+    writer.addLineBreak();
   }
 
-  /**
-   * 全ての実行可能メンバの情報を出力します。
-   *
-   * @param doc 実行可能メンバの情報
-   */
   private void writeMemberDoc(ExecutableMemberDoc doc) {
 
-    // 出力文字
     String str;
+    boolean isOverriddenMethod = false;
 
-    // 種類名
     String memberType;
     if (doc.isConstructor()) {
       memberType = "Constructor";
@@ -510,10 +444,7 @@ public class DocumentBuilder {
       memberType = "Member";
     }
 
-    // メソッド情報
-    XWPFRun run;
-    run = DocumentStyle.setSubTitleParagraph(word.createParagraph(), 100);
-    print(run, doc.name() + " " + memberType);
+    writer.addStyledParagraph(writer.findStyle(StyleName.METHOD), doc.name() + " " + memberType);
 
     // Method annotations
     if (0 < doc.annotations().length) {
@@ -523,15 +454,15 @@ public class DocumentBuilder {
         AnnotationTypeDoc annoType = annotation.annotationType();
         String name = annoType.simpleTypeName();
         if ("Override".equals(name)) {
-          run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
           str = "@Override";
-          print(run, str);
+          isOverriddenMethod = true;
+          writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), str);
+          writer.addLineBreak();
         }
       }
     }
 
     // Method signature 
-    run = DocumentStyle.getDefaultRun(word.createParagraph(), 0);
     str = doc.modifiers();
     if (doc instanceof MethodDoc) {
       MethodDoc method = (MethodDoc) doc;
@@ -539,103 +470,121 @@ public class DocumentBuilder {
     }
     str += " " + doc.name();
     str += " (" + getParamSignature(doc.parameters()) + ")";
-    print(run, str);
-    if (!doc.commentText().isEmpty()) {
-      run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-      print(run, doc.commentText());
+    writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), str);
+    writer.addLineBreak();
+
+    // writes the comment field
+    boolean hasComment = writeMethodComment(doc, false);
+    if (!hasComment) {
+      writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on method]");
+      writer.addLineBreak();
     }
 
-    // パラメータ
+    writer.addLineBreak();
+
+    // Exceptions
+    Type[] exceptions = doc.thrownExceptionTypes();
+    if (0 < exceptions.length) {
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "throws:");
+      writer.addLineBreak();
+      for (int i = 0; i < exceptions.length; i++) {
+        str = LONGSPACE + exceptions[i].simpleTypeName();
+        writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), str);
+        String comment = " " + getThrowsComment(doc.throwsTags(), exceptions[i].typeName());
+        if (!comment.isEmpty()) {
+          str = " - " + comment;
+          writeComment(str);
+        } else {
+          writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on exception reason]");
+        }
+        writer.addLineBreak();
+      }
+      writer.addLineBreak();
+    }
+
     Parameter[] parameters = doc.parameters();
     if (0 < parameters.length) {
-      run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-      print(run, "Parameters:");
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "Parameters:");
+      writer.addLineBreak();
       for (int i = 0; i < parameters.length; i++) {
-        str = String.format("%d) ", i + 1) + parameters[i].name();
-        String comment = getParamComment(doc.paramTags(), parameters[i].name());
-        if (!comment.isEmpty()) {
-          str += " - " + comment;
+        boolean isFound = false;
+        ParamsInfo paramInfo = findCommentedParameterByName(doc, parameters[i].name());
+        if (paramInfo != null) {
+          str = String.format(LONGSPACE + "(%d) ", i + 1) + paramInfo.getParameter().name();
+          String comment = getParamComment(paramInfo.getDoc().paramTags(), paramInfo.getParameter().name());
+          if (!comment.isEmpty()) {
+            str += " - " + comment;
+            writeComment(str);
+            isFound = true;
+          }
         }
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-        print(run, str);
+
+        if (!isFound) {
+          if (!isOverriddenMethod) {
+            writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on parameter]");
+          } else {
+            writer.addStyledRun(writer.findStyle(StyleName.COMMENT), "[JavaDocs: Inherited method. See super class.]");
+          }
+        }
+        writer.addLineBreak();
       }
+      writer.addLineBreak();
     }
 
-    // 戻り値
     if (doc instanceof MethodDoc) {
       MethodDoc method = (MethodDoc) doc;
       if (!method.returnType().simpleTypeName().equals("void")) {
-        run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-        print(run, "returns:");
-        str = method.returnType().simpleTypeName();
-        Tag[] tags = method.tags("return");
-        if (0 < tags.length) {
-          String comment = tags[0].text();
-          if (!comment.isEmpty()) {
-            str += " - " + comment;
+        writer.addStyledRun(writer.findStyle(StyleName.HEADING), "returns:");
+        writer.addLineBreak();
+        str = LONGSPACE + method.returnType().simpleTypeName();
+        boolean isFound = false;
+        do {
+          Tag[] tags = method.tags("return");
+          if (0 < tags.length) {
+            String comment = tags[0].text();
+            if (!comment.isEmpty()) {
+              str += " - " + comment;
+              writeComment(str);
+              writer.addLineBreak();
+              isFound = true;
+              break;
+            }
           }
-        }
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-        print(run, str);
-      }
-    }
+          method = method.overriddenMethod();
 
-    // 例外
-    Type[] exceptions = doc.thrownExceptionTypes();
-    if (0 < exceptions.length) {
-      run = DocumentStyle.setSectionParagraph(word.createParagraph(), 100);
-      print(run, "throws:");
-      for (int i = 0; i < exceptions.length; i++) {
-        str = exceptions[i].simpleTypeName();
-        String comment = getThrowsComment(doc.throwsTags(), exceptions[i].typeName());
-        if (!comment.isEmpty()) {
-          str += " - " + comment;
+        } while (method != null);
+
+        if (!isFound) {
+          if (!isOverriddenMethod) {
+            writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on return value]");
+          } else {
+            writer.addStyledRun(writer.findStyle(StyleName.COMMENT), "[JavaDocs: Inherited method. See super class.]");
+          }
+          writer.addLineBreak();
         }
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), 200);
-        print(run, str);
       }
     }
   }
 
   /**
-   * Javadoc の情報を出力します。
-   * <p>
-   * HTMLタグは簡易的に解釈します。処理しないHTMLタグは削除して文字情報のみ出力します。
-   * <p>
-   * Javadocのインラインタグはフォントを切り替えて文字部分のみ出力します。
+   * Pretty print comment as a run to writer.
    *
-   * @param run 文字出力用のハンドル
-   * @param str 出力する Javadoc 文字情報
    */
-  private void print(XWPFRun run, String str) {
+  private void writeComment(String str) {
 
-    // 段落ごとに処理
     String[] paragraphs = str.split("\\s*<(p|P)>\\s*");
     for (int i = 0; i < paragraphs.length; i++) {
-      if (0 < i) {
-        int indent = word.getLastParagraph().getIndentFromLeft();
-        run = DocumentStyle.getDefaultRun(word.createParagraph(), indent);
-      }
-
-      // 改行の結合
       paragraphs[i] = paragraphs[i].replaceAll("\\s*[\\r\\n]+\\s*", " ");
-
-      // 行ごとに改行を挿入
       paragraphs[i] = paragraphs[i].replaceAll("\\.\\s+", ".\n");
       paragraphs[i] = paragraphs[i].replaceAll("。\\s*", "。\n");
 
-      // 改行ごとに処理
       String[] lines = paragraphs[i].split("\n");
       for (int j = 0; j < lines.length; j++) {
-        if (0 < j) {
-          run.addCarriageReturn();
-        }
+
         String line = lines[j];
 
-        // HTMLタグの除去
-        line = line.replaceAll("\\s*</?([a-z]+|[A-Z]+)>\\s*", "");
+        line = line.replaceAll("\\s*</?([a-z]+|[A-Z]+)>\\s*", " ");
 
-        // エンティティ参照の復元
         line = line.replaceAll("&lt;", "<");
         line = line.replaceAll("&gt;", ">");
         line = line.replaceAll("&quot;", "\"");
@@ -643,94 +592,80 @@ public class DocumentBuilder {
         line = line.replaceAll("&nbsp;", " ");
         line = line.replaceAll("&amp;", "&");
 
-        // Javadocインラインタグの除去(フォント切り替え)
+        // Javadoc special comments like "{@link}"
         Pattern p = Pattern.compile("\\{@([a-z]+)\\s*([^\\}]*)\\}");
         Matcher m = p.matcher(line);
         int pos = 0;
         while (m.find()) {
-          run.setText(line.substring(pos, m.start()));
+          writer.addStyledRun(writer.findStyle(StyleName.COMMENT), line.substring(pos, m.start()));
           pos = m.end();
-          String value = m.group(2).trim();
+          String value = m.group(2);
 
-          // Javadocインラインタグ付き文字として出力
           if (!value.isEmpty()) {
-            XWPFRun runTaggedString = DocumentStyle.getDefaultRun(word.getLastParagraph(), -1);
-            runTaggedString.setFontFamily(Options.getOption("font2", Options.FONT_CONSOLAS));
-            runTaggedString.setText(value);
-            run = DocumentStyle.getDefaultRun(word.getLastParagraph(), -1);
+            writer.addStyledRun(writer.findStyle(StyleName.SIGNATURE), value);
           }
         }
 
-        // 通常文字として出力
-        run.setText(line.substring(pos));
+        line = line.substring(pos);
+        if (!line.isEmpty()) {
+          writer.addStyledRun(writer.findStyle(StyleName.COMMENT), line);
+        }
       }
     }
   }
 
-  private void setStyles(XWPFDocument word) {
-    XWPFStyles styles = word.createStyles();
+  /**
+   * Write the comment of the member (method or constructor) or delegate to
+   * supertype and write comment if empty.
+   *
+   * @param doc the member to take the comment from.
+   */
+  private boolean writeMethodComment(ExecutableMemberDoc doc, boolean isSuperType) {
+    if (null == doc) {
+      return false;
+    }
 
-    String heading1 = "Heading 1";
-    String heading2 = "Heading 2";
-    String heading3 = "Heading 3";
-    String heading4 = "Heading 4";
-    addCustomHeadingStyle(word, styles, heading1, 1, 36, "4288BC");
-    addCustomHeadingStyle(word, styles, heading2, 2, 28, "4288BC");
-    addCustomHeadingStyle(word, styles, heading3, 3, 24, "4288BC");
-    addCustomHeadingStyle(word, styles, heading4, 4, 20, "000000");
-  }
+    if (!doc.commentText().isEmpty()) {
+      writeComment(doc.commentText());
+      if (isSuperType) {
+        writeComment(" [JavaDocs note: This comment is inherited from super type " + doc.containingClass().qualifiedTypeName() + ".]");
+      }
+      writer.addLineBreak();
+      return true;
+    } else {
+      boolean isPrinted = false;
+      if (doc instanceof MethodDoc) {
+        MethodDoc superMethod = ((MethodDoc) doc).overriddenMethod();
+        isPrinted = writeMethodComment(superMethod, true);
+      }
 
-  private static void addCustomHeadingStyle(XWPFDocument docxDocument, XWPFStyles styles, String strStyleId, int headingLevel, int pointSize, String hexColor) {
+      if (!isPrinted) {
+        // check the docs of the interfaces of the type
+        ClassDoc classDoc = doc.containingClass();
+        ClassDoc[] interfaces = classDoc.interfaces();
+        // iterate interfaces
+        if (interfaces != null) {
+          for (ClassDoc interfaceDoc : interfaces) {
+            MethodDoc[] methods = interfaceDoc.methods();
+            if (methods != null) // iterate methods of interfaces
+            {
+              for (MethodDoc ifcMethod : methods) {
+                if (ifcMethod.name().equals(doc.name())) {
+                  if (ifcMethod.signature().equals(doc.signature())) {
+                    isPrinted = writeMethodComment(ifcMethod, true);
+                    if (isPrinted) {
+                      return true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
 
-    CTStyle ctStyle = CTStyle.Factory.newInstance();
-    ctStyle.setStyleId(strStyleId);
-
-    CTString styleName = CTString.Factory.newInstance();
-    styleName.setVal(strStyleId);
-    ctStyle.setName(styleName);
-
-    CTDecimalNumber indentNumber = CTDecimalNumber.Factory.newInstance();
-    indentNumber.setVal(BigInteger.valueOf(headingLevel));
-
-    // lower number > style is more prominent in the formats bar
-    ctStyle.setUiPriority(indentNumber);
-    
-
-    CTOnOff onoffnull = CTOnOff.Factory.newInstance();
-    ctStyle.setUnhideWhenUsed(onoffnull);
-
-    // style shows up in the formats bar
-    ctStyle.setQFormat(onoffnull);
-
-    // style defines a heading of the given level
-    CTPPr ppr = CTPPr.Factory.newInstance();
-    ppr.setOutlineLvl(indentNumber);
-    ctStyle.setPPr(ppr);
-
-    XWPFStyle style = new XWPFStyle(ctStyle);
-
-    CTHpsMeasure size = CTHpsMeasure.Factory.newInstance();
-    size.setVal(new BigInteger(String.valueOf(pointSize)));
-    CTHpsMeasure size2 = CTHpsMeasure.Factory.newInstance();
-    size2.setVal(new BigInteger("24"));
-
-    CTFonts fonts = CTFonts.Factory.newInstance();
-    fonts.setAscii(Options.FONT_DEFAULT_TEXT);
-
-    CTRPr rpr = CTRPr.Factory.newInstance();
-    rpr.setRFonts(fonts);
-    rpr.setSz(size);
-    rpr.setSzCs(size2);
-
-    CTColor color = CTColor.Factory.newInstance();
-    color.setVal(hexToBytes(hexColor));
-    rpr.setColor(color);
-    style.getCTStyle().setRPr(rpr);
-    // is a null op if already defined
-
-    style.setType(STStyleType.PARAGRAPH);
-    styles.addStyle(style);
-
+      return isPrinted;
+    }
   }
 
   public static byte[] hexToBytes(String hexString) {
