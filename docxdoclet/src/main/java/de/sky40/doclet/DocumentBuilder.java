@@ -31,10 +31,13 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
  */
 public class DocumentBuilder {
 
+ 
   /**
    * A sequence of spaces.
    */
-  public static final String LONGSPACE = "   ";
+  private static final String LONGSPACE = "   ";
+
+  private static final String TAG_VERSION = "version";
 
   /**
    * The options for building the document.
@@ -210,7 +213,7 @@ public class DocumentBuilder {
     // write implemented interfaces
     if (0 < classDoc.interfaces().length) {
       writer.addLineBreak();
-      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "implements:");
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), BuilderOptions.HEADING_IMPLEMENTS);
       
       for (int i = 0; i < classDoc.interfaces().length; i++) {
         if (0 < i) {
@@ -314,7 +317,7 @@ public class DocumentBuilder {
         writeComment(classDoc.commentText());
         writer.addLineBreak();
       } else {
-        writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on class/interface]");
+        writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_CLASS);
         writer.addLineBreak();
       }
 
@@ -378,9 +381,9 @@ public class DocumentBuilder {
 
   private void writeClassVersionsAndAuthors(ClassDoc classDoc) {
     // write version info
-    Tag[] versionTags = classDoc.tags("version");
+    Tag[] versionTags = classDoc.tags(TAG_VERSION);
     if (0 < versionTags.length) {
-      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "version:");
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), BuilderOptions.HEADING_VERSION);
       for (int i = 0; i < versionTags.length; i++) {
         String text = " " + versionTags[i].text();
         if (0 < i) {
@@ -394,7 +397,7 @@ public class DocumentBuilder {
     // write authors info
     Tag[] authorTags = classDoc.tags("author");
     if (0 < authorTags.length) {
-      writer.addStyledRun(writer.findStyle(StyleName.HEADING), "author:");
+      writer.addStyledRun(writer.findStyle(StyleName.HEADING), BuilderOptions.HEADING_AUTHOR);
       for (int i = 0; i < authorTags.length; i++) {
         String text = " " + authorTags[i].text();
         if (0 < i) {
@@ -425,7 +428,7 @@ public class DocumentBuilder {
     if (!doc.commentText().isEmpty()) {
       writeComment(doc.commentText());
     } else {
-      writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on field]");
+      writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_FIELD);
     }
     writer.addLineBreak();
   }
@@ -476,7 +479,7 @@ public class DocumentBuilder {
     // writes the comment field
     boolean hasComment = writeMethodComment(doc, false);
     if (!hasComment) {
-      writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on method]");
+      writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_METHOD);
       writer.addLineBreak();
     }
 
@@ -495,7 +498,7 @@ public class DocumentBuilder {
           str = " - " + comment;
           writeComment(str);
         } else {
-          writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on exception reason]");
+          writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_EXCEPTION);
         }
         writer.addLineBreak();
       }
@@ -521,9 +524,9 @@ public class DocumentBuilder {
 
         if (!isFound) {
           if (!isOverriddenMethod) {
-            writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on parameter]");
+            writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_PARAMETER);
           } else {
-            writer.addStyledRun(writer.findStyle(StyleName.COMMENT), "[JavaDocs: Inherited method. See super class.]");
+            writer.addStyledRun(writer.findStyle(StyleName.COMMENT), BuilderOptions.NOTE_INHERITED_METHOD);
           }
         }
         writer.addLineBreak();
@@ -556,9 +559,9 @@ public class DocumentBuilder {
 
         if (!isFound) {
           if (!isOverriddenMethod) {
-            writer.addStyledRun(writer.findStyle(StyleName.MISSING), "[missing comment on return value]");
+            writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_RETURN_VALUE);
           } else {
-            writer.addStyledRun(writer.findStyle(StyleName.COMMENT), "[JavaDocs: Inherited method. See super class.]");
+            writer.addStyledRun(writer.findStyle(StyleName.COMMENT), BuilderOptions.NOTE_INHERITED_METHOD);
           }
           writer.addLineBreak();
         }

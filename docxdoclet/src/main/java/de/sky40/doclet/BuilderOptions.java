@@ -57,6 +57,19 @@ public class BuilderOptions {
   public static final String TEXT_CLASS = "class ";
   public static final String TEXT_ENUM = "enum ";
   public static final String TEXT_INTERFACE = "interface ";
+  
+  public static final String HEADING_AUTHOR = "author:";
+  public static final String HEADING_IMPLEMENTS = "implements:";
+  public static final String HEADING_VERSION = "version:";
+  
+  public static final String NOTE_INHERITED_METHOD = "[JavaDocs: Inherited method. See super class.]";
+  public static final String NOTE_MISSING_COMMENT_ON_CLASS = "[missing comment on class/interface]";
+  public static final String NOTE_MISSING_COMMENT_ON_EXCEPTION = "[missing comment on exception]";
+  public static final String NOTE_MISSING_COMMENT_ON_FIELD = "[missing comment on field]";
+  public static final String NOTE_MISSING_COMMENT_ON_METHOD = "[missing comment on method]";
+  public static final String NOTE_MISSING_COMMENT_ON_PARAMETER = "[missing comment on parameter]";
+  public static final String NOTE_MISSING_COMMENT_ON_RETURN_VALUE = "[missing comment on return value]";
+
 
   private final String[][] options;
 
