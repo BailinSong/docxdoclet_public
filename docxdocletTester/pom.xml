@@ -16,7 +16,7 @@
         <dependency>
             <groupId>de.sky40</groupId>
             <artifactId>docxdoclet</artifactId>
-            <version>1.0</version>
+            <version>2.0</version>
         </dependency>
     </dependencies>
     
@@ -46,11 +46,11 @@
                     </links>
                
                     <doclet>de.sky40.doclet.DocxDoclet</doclet>
-                    <docletPath>C:\Users\HStilke\Repositories\docxdoclet\docxdoclet\target\docxdoclet-1.0-jar-with-dependencies.jar</docletPath>
+                    <docletPath>D:\repositories\sky40\docXdoclet\docxdoclet\dist\docxdoclet-2.0-jar-with-dependencies.jar</docletPath>
                     <useStandardDocletOptions>false</useStandardDocletOptions>
                     <additionalOptions>
-                        <additionalOption>-title</additionalOption>
-                        <additionalOption>TEST</additionalOption>
+                        <additionalOption>-template</additionalOption>
+                        <additionalOption>D:\repositories\sky40\docXdoclet\docxdocletTester\src\main\resources\template_sky40.docx</additionalOption>
                     </additionalOptions>                
                 </configuration>
                 <executions>
