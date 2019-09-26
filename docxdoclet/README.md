@@ -28,37 +28,37 @@ v1.0
 
 ```xml
 <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <show>public</show>
-                    <nohelp>false</nohelp>
-                    <detectLinks>true</detectLinks>
-                    <detectOfflineLinks>true</detectOfflineLinks>
-                    <links>   
-                        <link>target\apidocs</link>
-                    </links>
-               
-                    <doclet>de.sky40.doclet.DocxDoclet</doclet>
-                    <docletPath>...\docxdoclet\dist\docxdoclet-2.0-jar-with-dependencies.jar</docletPath>
-                    <useStandardDocletOptions>false</useStandardDocletOptions>
-                    <additionalOptions>
-                        <additionalOption>-template</additionalOption>
-                        <additionalOption>...\docxdoclet\dist\template.docx</additionalOption>
-                        <additionalOption>-file</additionalOption>
-                        <additionalOption>myoutput.docx</additionalOption>
-                    </additionalOptions>                
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-javadoc-plugin</artifactId>
+    <version>3.0.0</version>
+    <configuration>
+        <show>public</show>
+        <nohelp>false</nohelp>
+        <detectLinks>true</detectLinks>
+        <detectOfflineLinks>true</detectOfflineLinks>
+        <links>   
+            <link>target\apidocs</link>
+        </links>
+   
+        <doclet>de.sky40.doclet.DocxDoclet</doclet>
+        <docletPath>...\docxdoclet\dist\docxdoclet-2.0-jar-with-dependencies.jar</docletPath>
+        <useStandardDocletOptions>false</useStandardDocletOptions>
+        <additionalOptions>
+            <additionalOption>-template</additionalOption>
+            <additionalOption>...\docxdoclet\dist\template.docx</additionalOption>
+            <additionalOption>-file</additionalOption>
+            <additionalOption>myoutput.docx</additionalOption>
+        </additionalOptions>                
+    </configuration>
+    <executions>
+        <execution>
+            <id>attach-javadocs</id>
+            <goals>
+                <goal>jar</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
 ```
 
 ## Copyright and License
