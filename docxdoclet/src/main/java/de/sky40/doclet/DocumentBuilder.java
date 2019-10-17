@@ -31,7 +31,6 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
  */
 public class DocumentBuilder {
 
- 
   /**
    * A sequence of spaces.
    */
@@ -206,7 +205,7 @@ public class DocumentBuilder {
 
   /**
    * Write a doc on the implemented interfaces of a class.
-   * 
+   *
    * @param classDoc The class documentation node.
    */
   private void writeClassImplementedInterfaces(ClassDoc classDoc) {
@@ -214,7 +213,7 @@ public class DocumentBuilder {
     if (0 < classDoc.interfaces().length) {
       writer.addLineBreak();
       writer.addStyledRun(writer.findStyle(StyleName.HEADING), BuilderOptions.HEADING_IMPLEMENTS);
-      
+
       for (int i = 0; i < classDoc.interfaces().length; i++) {
         if (0 < i) {
           writer.addRun(",");
@@ -304,9 +303,9 @@ public class DocumentBuilder {
       // write the class inheritance tree
       writeClassInheritanceTree(classDoc);
 
-       // write implemented interfaces
+      // write implemented interfaces
       writeClassImplementedInterfaces(classDoc);
-      
+
       writer.closeParagraph();
 
       // write modifiers and name
@@ -317,8 +316,10 @@ public class DocumentBuilder {
         writeComment(classDoc.commentText());
         writer.addLineBreak();
       } else {
-        writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_CLASS);
-        writer.addLineBreak();
+        if (builderOptions.isShowMissingDocs()) {
+          writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_CLASS);
+          writer.addLineBreak();
+        }
       }
 
       writer.addLineBreak();
@@ -427,10 +428,13 @@ public class DocumentBuilder {
 
     if (!doc.commentText().isEmpty()) {
       writeComment(doc.commentText());
+      writer.addLineBreak();
     } else {
-      writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_FIELD);
+      if (builderOptions.isShowMissingDocs()) {
+        writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_FIELD);
+        writer.addLineBreak();
+      }
     }
-    writer.addLineBreak();
   }
 
   private void writeMemberDoc(ExecutableMemberDoc doc) {
@@ -479,8 +483,10 @@ public class DocumentBuilder {
     // writes the comment field
     boolean hasComment = writeMethodComment(doc, false);
     if (!hasComment) {
-      writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_METHOD);
-      writer.addLineBreak();
+      if (builderOptions.isShowMissingDocs()) {
+        writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_METHOD);
+        writer.addLineBreak();
+      }
     }
 
     writer.addLineBreak();
@@ -498,7 +504,9 @@ public class DocumentBuilder {
           str = " - " + comment;
           writeComment(str);
         } else {
-          writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_EXCEPTION);
+          if (builderOptions.isShowMissingDocs()) {
+            writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_EXCEPTION);
+          }
         }
         writer.addLineBreak();
       }
@@ -524,7 +532,9 @@ public class DocumentBuilder {
 
         if (!isFound) {
           if (!isOverriddenMethod) {
-            writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_PARAMETER);
+            if (builderOptions.isShowMissingDocs()) {
+              writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_PARAMETER);
+            }
           } else {
             writer.addStyledRun(writer.findStyle(StyleName.COMMENT), BuilderOptions.NOTE_INHERITED_METHOD);
           }
@@ -559,7 +569,9 @@ public class DocumentBuilder {
 
         if (!isFound) {
           if (!isOverriddenMethod) {
-            writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_RETURN_VALUE);
+            if (builderOptions.isShowMissingDocs()) {
+              writer.addStyledRun(writer.findStyle(StyleName.MISSING), BuilderOptions.NOTE_MISSING_COMMENT_ON_RETURN_VALUE);
+            }
           } else {
             writer.addStyledRun(writer.findStyle(StyleName.COMMENT), BuilderOptions.NOTE_INHERITED_METHOD);
           }

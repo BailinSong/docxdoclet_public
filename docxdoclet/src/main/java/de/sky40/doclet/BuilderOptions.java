@@ -31,7 +31,7 @@ public class BuilderOptions {
    */
   public static final String OPTION_OUTPUT_FILENAME = "file";
 
-    /**
+  /**
    * The dault value for the template file, if none supplied by options.
    */
   public static final String OPTION_DEFAULT_OUTPUT_FILENAME = "javadocs.docx";
@@ -42,8 +42,17 @@ public class BuilderOptions {
    */
   public static final String OPTION_ACCESS_LEVEL = "level";
 
+  /**
+   * The option name for the documentation of missing doc items (e.g. -missing
+   * HIDE); Valid values are SHOW and HIDE.
+   */
+  public static final String OPTION_MISSING_DOC = "missing";
+
   public static final String ACCESS_LEVEL_PUBLIC = "PUBLIC";
   public static final String ACCESS_LEVEL_PRIVATE = "PRIVATE";
+
+  public static final String MISSING_SHOW = "SHOW";
+  public static final String MISSING_HIDE = "HIDE";
 
   /**
    * The default option for the acces level if none is supplied.
@@ -57,11 +66,11 @@ public class BuilderOptions {
   public static final String TEXT_CLASS = "class ";
   public static final String TEXT_ENUM = "enum ";
   public static final String TEXT_INTERFACE = "interface ";
-  
+
   public static final String HEADING_AUTHOR = "author:";
   public static final String HEADING_IMPLEMENTS = "implements:";
   public static final String HEADING_VERSION = "version:";
-  
+
   public static final String NOTE_INHERITED_METHOD = "[JavaDocs: Inherited method. See super class.]";
   public static final String NOTE_MISSING_COMMENT_ON_CLASS = "[missing comment on class/interface]";
   public static final String NOTE_MISSING_COMMENT_ON_EXCEPTION = "[missing comment on exception]";
@@ -69,7 +78,6 @@ public class BuilderOptions {
   public static final String NOTE_MISSING_COMMENT_ON_METHOD = "[missing comment on method]";
   public static final String NOTE_MISSING_COMMENT_ON_PARAMETER = "[missing comment on parameter]";
   public static final String NOTE_MISSING_COMMENT_ON_RETURN_VALUE = "[missing comment on return value]";
-
 
   private final String[][] options;
 
@@ -132,6 +140,7 @@ public class BuilderOptions {
       case "-" + OPTION_OUTPUT_FILENAME:
       case "-" + OPTION_TEMPLATE_FILENAME:
       case "-" + OPTION_ACCESS_LEVEL:
+      case "-" + OPTION_MISSING_DOC:
         return true;
     }
     return false;
@@ -147,14 +156,25 @@ public class BuilderOptions {
     return ACCESS_LEVEL_PUBLIC.equals(level);
   }
 
-    /**
-   * Indicates if the builder shall include private members in creating a document.
+  /**
+   * Indicates if the builder shall include private members in creating a
+   * document.
    *
    * @return true, if level is private.
    */
   public boolean isAccessLevelPrivate() {
     String level = getOption(OPTION_ACCESS_LEVEL, ACCESS_LEVEL_PUBLIC);
     return ACCESS_LEVEL_PRIVATE.equals(level);
+  }
+
+  /**
+   * Indicates if the builder shall mark missing doc comments as such.
+   *
+   * @return true, if is showing missing docs.
+   */
+  public boolean isShowMissingDocs() {
+    String missing = getOption(OPTION_MISSING_DOC, MISSING_SHOW);
+    return MISSING_SHOW.equals(missing);
   }
 
 }

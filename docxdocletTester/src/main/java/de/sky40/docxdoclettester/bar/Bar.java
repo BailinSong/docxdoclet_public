@@ -27,9 +27,16 @@ public class Bar {
     this.myEnum = myEnum;
   }
 
+  /**
+   * Default ctor.
+   */
   public Bar() {
   }
 
+  /**
+   * Do getters and setters need comments?
+   * @return The {@link de.sky40.docxdoclettester.bar.BarEnum} of the bar. 
+   */
   public BarEnum getMyEnum() {
     return myEnum;
   }

@@ -49,6 +49,10 @@
                     <docletPath>D:\repositories\sky40\docXdoclet\docxdoclet\dist\docxdoclet-2.0-jar-with-dependencies.jar</docletPath>
                     <useStandardDocletOptions>false</useStandardDocletOptions>
                     <additionalOptions>
+                        <additionalOption>-level</additionalOption>
+                        <additionalOption>PRIVATE</additionalOption>
+                        <additionalOption>-missing</additionalOption>
+                        <additionalOption>SHOW</additionalOption>
                         <additionalOption>-template</additionalOption>
                         <additionalOption>D:\repositories\sky40\docXdoclet\docxdocletTester\src\main\resources\template_sky40.docx</additionalOption>
                     </additionalOptions>                
