@@ -12,7 +12,7 @@ Dieses Repository enthält zwei Softwareprojekte, mit dem Ziel automatisiert `.d
 - *docxDoclet* ist der Code für das eigentliche Doclet, siehe Beispiel im Projektverzeichnis.
 - *docxDocletTester* ist ein Testprojekt mit dem die Features der Generierung eines docx aus einer Vorlage `template.docx` erstellt werden.
 
-Bitte lesen Sie die README iim jeweiligen Projektverzeichnis für mehr Information.
+Bitte lesen Sie die README.md im jeweiligen Projektverzeichnis für mehr Information.
 
 ###### english:
 # DocxDoclet Project
