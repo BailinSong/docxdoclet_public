@@ -1,3 +1,7 @@
+![alt text][logo]
+
+[logo]: http://bit.ly/Sky40Email "(c)2019 by Sky4.0 GmbH, www.sky40.de"
+
 # DocxDoclet Project
 
 This repository contains two projects for the purpose of auto-creating `.docx` documents from the javadoc comments in the code.
