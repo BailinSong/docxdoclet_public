@@ -5,12 +5,12 @@
 ###### deutsch:
 # Projekt DocxDoclet
 
-Dieses Repository enthält zwei Softwareprojekte, mit dem Ziel automatisiert `.docx` Dokumente aus den JavaDoc Code Annotationen zu erzeugen
+Dieses Repository enthält zwei Softwareprojekte, mit dem Ziel automatisiert `.docx` Dokumente aus den JavaDoc Code Annotationen zu erzeugen.
 
 <hr/>
 
 - *docxDoclet* ist der Code für das eigentliche Doclet, siehe Beispiel im Projektverzeichnis.
-- *docxDocletTester* ist ein Testprojekt mit dem die Features der Generierung eines docx aus einer Vorlage `template.docx'.
+- *docxDocletTester* ist ein Testprojekt mit dem die Features der Generierung eines docx aus einer Vorlage `template.docx` erstellt werden.
 
 Bitte lesen Sie die README iim jeweiligen Projektverzeichnis für mehr Information.
 
