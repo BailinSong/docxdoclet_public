@@ -2,6 +2,19 @@
 
 [logo]: http://bit.ly/Sky40Email "(c)2019 by Sky4.0 GmbH, www.sky40.de"
 
+#####deutsch:
+# Projekt DocxDoclet
+
+Dieses Repository enthält zwei Softwareprojekte, mit dem Ziel automatisiert `.docx` Dokumente aus den JavaDoc Code Annotationen zu erzeugen
+
+<hr/>
+
+- *docxDoclet* ist der Code für das eigentliche Doclet, siehe Beispiel im Projektverzeichnis.
+- *docxDocletTester* ist ein Testprojekt mit dem die Features der Generierung eines docx aus einer Vorlage `template.docx'.
+
+Bitte lesen Sie die README iim jeweiligen Projektverzeichnis für mehr Information.
+
+#####english:
 # DocxDoclet Project
 
 This repository contains two projects for the purpose of auto-creating `.docx` documents from the javadoc comments in the code.
