@@ -15,7 +15,7 @@ Das Original findet man hier: https://github.com/cottonspace/docxdoclet
 v2.0
 + Reads in a docx file ("template.docx" as default) and extracts the styles within the document.
 + Produces a docx documentation with the same style as in template. Adjust the template or
-  take your companies standard docx template and add the key words
+  take your company's standard docx template.
 + uses docx4j (Apache License 2.0) instead of POI now
 
 v1.0
@@ -44,10 +44,14 @@ v1.0
         <docletPath>...\docxdoclet\dist\docxdoclet-2.0-jar-with-dependencies.jar</docletPath>
         <useStandardDocletOptions>false</useStandardDocletOptions>
         <additionalOptions>
+            <additionalOption>-level</additionalOption>
+            <additionalOption>PRIVATE or PUBLIC</additionalOption>
+            <additionalOption>-missing</additionalOption>
+            <additionalOption>SHOW or HIDE</additionalOption>
             <additionalOption>-template</additionalOption>
-            <additionalOption>...\docxdoclet\dist\template.docx</additionalOption>
+            <additionalOption>path to the template like : ...\docxdoclet\dist\template.docx</additionalOption>
             <additionalOption>-file</additionalOption>
-            <additionalOption>myoutput.docx</additionalOption>
+            <additionalOption>name of output file like : myoutput.docx</additionalOption>
         </additionalOptions>                
     </configuration>
     <executions>
